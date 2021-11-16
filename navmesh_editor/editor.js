@@ -323,6 +323,7 @@ function load_mesh() {
                     ),
                 });
                 mesh = new nav2d.NavMesh(polygons);
+                console.log(mesh);
                 set_stats(
                     `Polygons: ${polygons.length} <br>Triangles: ${mesh.polygons.length}`
                 );
@@ -461,6 +462,7 @@ function render_points(points) {
                     new_poly: [],
                 });
                 mesh = new nav2d.NavMesh(polygons);
+                console.log(mesh);
                 set_stats(
                     `Polygons: ${polygons.length} <br>Triangles: ${mesh.polygons.length}`
                 );
@@ -487,7 +489,8 @@ function compute_path() {
         const sy = parseFloat(document.getElementById("sy").value);
         const ex = parseFloat(document.getElementById("ex").value);
         const ey = parseFloat(document.getElementById("ey").value);
-
+        let nodes= mesh.findPath([sx, sy], [ex, ey]);
+        console.log(nodes);
         update_state({
             path: mesh.findPath([sx, sy], [ex, ey]),
         });

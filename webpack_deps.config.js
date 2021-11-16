@@ -1,7 +1,7 @@
 var path = require("path");
 
 module.exports = {
-    mode: "production",
+    mode: "none",
     entry: "./src/nav2d.js",
     output: {
         path: path.resolve(__dirname, "dist"),
