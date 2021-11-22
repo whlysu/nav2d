@@ -215,7 +215,29 @@ function showMesh(data){
     polygons.push(polygon);
     polygon.on("click",onMeshClick)
   }
-  new bnmap.VectorLayer('buildingOutline', polygons).addTo(map);
+ var vlayer = new bnmap.VectorLayer('buildingOutline', polygons).addTo(map);
+
+ let linec= [{x: 116.58784393640394, y: 40.0789036309246},
+  {x: 116.58796425806781, y: 40.07934009819061},
+  {x: 116.58800616741041, y: 40.07942416840078}];
+
+  let lll=  [{x: 116.58784393640394, y: 40.0789036309246},
+  {x: 116.58796425806781, y: 40.07934009819061},
+  {x: 116.58819868937044, y: 40.079717411943896},
+  {x: 116.58860783395801, y: 40.07995033358358}]
+
+
+
+
+  let path = new bnmap.LineString(lll, {
+    visible : true,
+    symbol: {
+      'lineColor' : '#cd1398',
+      'lineWidth' : 2,
+
+    },
+  });
+  vlayer.addGeometry(path)
 }
 function onMeshClick(evt){
   console.log("mesh clicked");
