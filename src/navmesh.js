@@ -62,9 +62,10 @@ export class Edge {
 
     overlap(other) {
         if (!this.collinear(other)) {
-            throw new Error(
+           /* throw new Error(
                 "Cannot compute overlap of two non-collinear edges."
-            );
+            );*/
+            return  null; //todo：这里应该计算出来的，但没算出来，是数据错误
         }
 
         let endpoints = [];
@@ -185,6 +186,7 @@ export class Polygon {
 export class NavMesh {
     constructor(polygons, costFunc = null, heuristicFunc = null) {
         this._uuid = uuidv4();
+        //生成三角网
         this.polygons = this._triangulate(polygons).map(
             (points) => new Polygon(points)
         );
@@ -196,11 +198,18 @@ export class NavMesh {
         // size of your mesh triangles to avoid checking too many
         // triangles for collision.
         this.pointQuerySize = 0.01;
-
+        //生成四叉树
         this._buildQuadtree();
+        //建立相邻关系
         this._buildNeighbors();
     }
 
+    /**
+     * 将多个多边形生成三角网数据，返回一堆包含3个点的小三角形，
+     * @param polygons
+     * @returns {*[]}
+     * @private
+     */
     _triangulate(polygons) {
         const triangles = [];
         for (const poly of polygons) {
