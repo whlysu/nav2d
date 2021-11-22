@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>首都机场室内地图demo</title>
+
+    <link type="text/css" rel="stylesheet" href="./lib/bnmap.css">
+    <script type="text/javascript" src="./lib/three.min.js"></script>
+    <script type="text/javascript" src="./lib/bnmap.js"></script>
+    <script type="text/javascript" src="./lib/jquery-3.4.1.min.js"></script>
+
+
+
+  <style>
+    html,body{
+        margin:0px;
+        height:100%;
+        width: 100%;
+    }
+    #map { width: 100%; height: 100%; background-color : #000;}
+    #tools{
+      position: absolute;
+      right: 10px;
+      top:10px;
+      background-color: #aaaaaa;
+      width: 200px;
+      height: 600px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="tools">
+  <input type="button"  value="打开性能监控" onclick="statsMonitor()" /><br>
+  <input type="button"  value="minmaxCtr" onclick="toMinMax()" /><br>
+  <input type="button"  value="查看数据量" onclick="seeSize()" /><br>
+  <hr>
+
+  <input type="button"  value="加载T2地图" onclick="loadT2()" /><br>
+  <input type="button"  value="显示三角网" onclick="loadMesh()" /><br>
+  <input type="button"  value="显示T2-F5" onclick="showFloor('T2','F5')" /><br>
+  <input type="button"  value="显示T2-F4" onclick="showFloor('T2','F4')" /><br>
+  <input type="button"  value="显示T2-F3" onclick="showFloor('T2','F3')" /><br>
+  <input type="button"  value="显示T2-F2" onclick="showFloor('T2','F2')" /><br>
+  <input type="button"  value="显示T2-F1" onclick="showFloor('T2','F1')" /><br>
+  <input type="button"  value="显示T2-B1" onclick="showFloor('T2','B1')" /><br>
+  <hr>
+  <input type="button"  value="加载T2路网" onclick="loadWalkRoute()" /><br>
+  <input type="button"  value="显示B1路网" onclick="showRoute('B1')" /><br>
+  <input type="button"  value="显示F1路网" onclick="showRoute('F1')" /><br>
+  <input type="button"  value="显示F2路网" onclick="showRoute('F2')" /><br>
+
+  <input type="button"  value="设置地图中心为导航起点" onclick="setStart()" /><br>
+  <input type="button"  value="设置地图中心为导航终点" onclick="setEnd()" /><br>
+  <input type="button"  value="固定起点和终点" onclick="setStartAndEnd()" /><br>
+  <input type="button"  value="路径规划" onclick="getPath()" /><br>
+  <input type="button"  value="开始导航" onclick="startNavigation()" /><br>
+  <input type="button"  value="开始导航along" onclick="startNavigation_along()" /><br>
+  <input type="button"  value="停止导航" onclick="stopNavigation()" /><br>
+
+
+  <hr>
+  <hr>
+  <input type="button"  value="快速移动测试" onclick="moveQuickly()" /><br>
+  <input type="button"  value="停止移动" onclick="stopMove()" /><br>
+  <hr>
+  <input type="button"  value="显示转向角度" onclick="testTurfAngle()" /><br>
+  <input type="button"  value="删除转向角度" onclick="removeTrunMarker()" /><br>
+  <hr>
+  <hr>
+  <input type="button"  value="删除转向角度" onclick="removeTrunMarker()" /><br>
+  <hr>
+  <input type="button"  value="加载兴趣点" onclick="loadingPoi()" /><br>
+  <input type="button"  value="加载兴趣点-threjs" onclick="loadingPoi_three()" /><br>
+  <input type="button"  value="显示图标box" onclick="showMarkBox()" /><br>
+  <input type="button"  value="显示图标中心点" onclick="showMarkCenter()" /><br>
+  <input type="button"  value="清楚图标box" onclick="cleanBox()" /><br>
+  <hr>
+
+  <input type="button"  value="根据路由ID规划导航路线" onclick="startNavigationByID()" /><br>
+  <input type="button"  value="根据XY规划导航路线" onclick="startNavigationByXY()" /><br>
+  <input type="button"  value="根据XY规划导航路线2" onclick="startNavigationByXY2()" /><br>
+  <input type="button"  value="根据XY规划导航路线3" onclick="startNavigationByXY3()" /><br>
+  <input type="button"  value="监听地图点击事件" onclick="mapClick()" /><br>
+  <input type="button"  value="监听建筑物点击事件" onclick="buildClick()" /><br>
+  <hr>
+  <input type="button"  value="监听地图中心点的位置" onclick="whereIsMapCenter()" /><br>
+  <hr>
+  <input type="button"  value="清空所有建筑物" onclick="clearBuild()" /><br>
+
+
+  <hr>
+  <input type="button"  value="获取所有显示楼层" onclick="getVisbleFloors()" /><br>
+  <input type="button"  value="获取T1显示楼层" onclick="getVisbleFloors(4)" /><br>
+  <hr>
+  <input type="button"  value="清空所有点" onclick="clearBuildingsPoint()" /><br>
+  <input type="button"  value="清空所有点-groupid" onclick="clearBuildingsPointByGroupeid()" /><br>
+
+  <hr>
+
+  <input type="button"  value="测距" onclick="distance()" /><br>
+  <input type="button"  value="改变容器大小" onclick="changeSize()" /><br>
+
+
+</div>
+<script>
+
+$().ready(function(){
+    init();
+})
+
+function toMinMax(){
+  if($("#tools").css("height") !== "50px"){
+    $("#tools").css("height","50px");
+  }else{
+    $("#tools").css("height","500px");
+  }
+
+}
+
+
+var map,T1,T2,T3C,DCJ,walkRouteData,startPoint,endPoint, path;;
+var clicktime = 0;
+function init () {
+  map = new bnmap.Map("map",{
+   /* spatialReference:{
+      projection:'EPSG:3857'
+    },*/
+     /* defaultProjection:{
+      projection:'EPSG:3857'
+    },*/
+    center : [ 116.58859341708455, 40.07873518948142],
+    //center : [ 12978582.85, 4877390.47],
+    zoom   :  16,
+    pitch : 0,
+    bearing : 0,
+    centerCross : true,
+    doubleClickZoom : false,
+    //这里的baseLayer是外网地图，可以不要
+    baseLayer : new bnmap.TileLayer('tile',{
+      urlTemplate: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      subdomains: ['a','b','c','d']
+    }),
+    //图层控制控件
+    layerSwitcherControl: {
+      'position'  : 'top-left',
+      'baseTitle' : 'Base Layers',
+      // title of layers
+      'overlayTitle' : 'Layers',
+      // layers you don't want to manage with layer switcher
+      'excludeLayers' : [],
+      // css class of container element, bnmap-layer-switcher by default
+      'containerClass' : 'bnmap-layer-switcher'
+    },
+  });
+
+  map.on('click', this.onMapClick);
+  map.buildingInfo=undefined;
+}
+
+
+
+
+/**
+ * 加载T2
+ */
+function loadT2 () {
+  var that=this;
+  $.ajax({
+    url: "./data/SD_T2.json",
+    type: "GET",
+    dataType: "json",
+    success: function(data) {//请求成功完成后要执行的方法
+      that.T2 = that.map.loadBuilding(data,{
+        featureEventRecall:function (evt) {
+          if( new Date().getTime() -  clicktime <50){
+            return;
+          }
+          console.log("featureEventRecall");
+        },
+        visbileFloors:["F2"]
+      });
+    }
+  })
+}
+/**
+ * 加载mesh
+ */
+function loadMesh () {
+  var that=this;
+  $.ajax({
+    url: "./data/t2_mesh.json",
+    type: "GET",
+    dataType: "json",
+    success: function(data) {//请求成功完成后要执行的方法
+        showMesh(data);
+    }
+  })
+}
+function showMesh(data){
+  var polygons=[];
+  for (let i = 0; i < data.length; i++) {
+    var polygon = new bnmap.Polygon(data[i].points, {
+      visible : true,
+      symbol: {
+        'lineColor' : '#34495e',
+        'lineWidth' : 2,
+        'polygonFill' : 'rgb(135,196,240)',
+        'polygonOpacity' : 0.6
+      },
+      properties:data[i]
+    });
+    polygons.push(polygon);
+    polygon.on("click",onMeshClick)
+  }
+  new bnmap.VectorLayer('buildingOutline', polygons).addTo(map);
+}
+function onMeshClick(evt){
+  console.log("mesh clicked");
+  console.log(evt.target.properties.id);
+  console.log(evt.target.properties.nb.toString());
+}
+/**
+ * 加载步行路网
+ */
+function loadWalkRoute () {
+  var that=this;
+  $.ajax({
+    //url: "./data/t2_route_1635245337275.json",
+    url: "./data/t2route_20211102bhr.json",
+    type: "GET",
+    dataType: "json",
+    success: function(data) {//请求成功完成后要执行的方法
+      var options={
+        useNodedis:0.001 //当目导航起始点距离路网节点小于该距离时使用路网节点导航1M---0.00001
+      }
+      walkRouteData=data;
+      walkNV=new bnmap.NaviAnayser(data,options);
+      console.log("路网加载完成-------------");
+    }
+  })
+}
+
+function showRoute(floorid){
+  for (let i = 0; i < walkRouteData.length; i++) {
+    let node =walkRouteData[i]
+    if(node.attr.floor !== floorid){
+      continue;
+    }
+    for(let j = 0;j < node.neighbors.length; j++){
+      let toNode = getNode(node.neighbors[j].id);
+     /* if(!getNode){
+        console.error("节点未找到:" + node.neighbors.id)
+      }
+      drawRouteLine(node,toNode);*/
+       if(node.attr.floor !== toNode.attr.floor){
+         drawMarkToFloor(node.position,"T2",floorid,node.id+":"+toNode.id);
+      }
+      console.log("drawRouteNode,"+i);
+    }
+  }
+}
+function drawRouteLine(snode,tnode){
+  let startAlt=getAltitude(snode.attr.floor);
+  let endAlt=getAltitude(tnode.attr.floor);
+  var tlayer = map.buildingLayers[0]
+  let linematerial = new THREE.LineBasicMaterial({
+    linewidth:2,
+    color:"#ff0000",
+    opacity:1,
+    transparent: true
+  });
+  var linejson = {
+    type: 'Feature',
+    properties: {},
+    geometry: {
+      type: 'LineString',
+      coordinates: [snode.position,tnode.position]
+    }
+  };
+  var lineString = bnmap.GeoJSON.toGeometry(linejson);
+  var _line = tlayer.toLine(lineString, {
+    //altitude: [startAlt,endAlt],
+    altitude:10,
+    interactive: false
+  }, linematerial);
+  tlayer.addMesh(_line);
+}
+/**
+ * 按id获取节点
+ */
+function getNode(nodeID){
+  for (let i = 0; i < walkRouteData.length; i++) {
+    let node =walkRouteData[i]
+    if(node.id === nodeID){
+      return node;
+    }
+  }
+  return  null;
+}
+/**
+ * 按楼层获取高度
+ */
+function getAltitude(floorid){
+ let flooralt={
+   F5:50,
+   F4:40,
+   F3:30,
+   F2:20,
+   F1:10,
+   B1:0,
+ }
+  return  flooralt[floorid];
+}
+
+
+function startNavigationByID(){
+  var options={
+    useNodedis:0.0001 //当目导航起始点距离路网节点小于该距离时使用路网节点导航1M---0.00001
+  }
+  path=walkNV.analyser(99,37)
+  console.log("NavigationByID");
+  console.log(path);
+}
+function startNavigationByXY(){
+  var options={
+    useNodedis:0.001, //当目导航起始点距离路网节点小于该距离时使用路网节点导航1M---0.00001
+    extentSearchNum:0.001
+  }
+
+
+  var startPoint={
+    x: 104.43974917517698,
+    y: 30.31619410289389,
+    floor: "F3"};
+  var endPoint={
+    x: 104.43910424880414,
+    y: 30.315002345796614,
+    floor: "F3"};
+  path=walkNV.analyser(startPoint,endPoint,options);
+
+  //path=walkNV.analyser({x:104.43701522000004,y:30.315046490000044,floor:"F2"},    {x:104.44530576500006,y:30.312885229000075,floor:"F3"},options)
+
+  console.log("NavigationByXY");
+  console.log(path);
+}
+function setStart(){
+  var center=map.getCenter();
+  startPoint={x:center.x,y:center.y,floor:"F2"};
+
+}
+function setEnd(){
+  var center=map.getCenter();
+  endPoint={x:center.x,y:center.y,floor:"F2"};
+}
+function setStartAndEnd(){
+  startPoint =  {x: 116.58786432332658, y: 40.078960171238606, floor: "F2"};
+  //endPoint =  {x: 116.58797988878348, y: 40.079727453950085, floor: "F1"};
+  endPoint =  {x:  116.58786183801601, y: 40.07908023837709, floor: "F1"};
+}
+function getPath(){
+  var options={
+    useNodedis:0.001, //当目导航起始点距离路网节点小于该距离时使用路网节点导航1M---0.00001
+    extentSearchNum:0.001
+  }
+
+  if(!startPoint || !endPoint){
+    alert("请先设置起点和终点");
+  }
+  path=walkNV.analyser(startPoint,endPoint,options);
+
+  console.log("NavigationByXY");
+  console.log(path);
+}
+
+function startNavigationByXY2(){
+  var options={
+    useNodedis:0.0001 //当目导航起始点距离路网节点小于该距离时使用路网节点导航1M---0.00001
+  }
+
+  path=walkNV.analyser({x:104.43914752878061,y:30.315283422492115,floor:"F2"},
+    {x:104.43833918273049,y:30.31397191001483,floor:"F2"},options)
+  console.log("NavigationByXY");
+  console.log(path);
+}
+function startNavigationByXY3(){
+  var options={
+    useNodedis:0.0001 //当目导航起始点距离路网节点小于该距离时使用路网节点导航1M---0.00001
+  }
+
+  path=walkNV.analyser({x:104.4453879,y:30.3128779 ,floor:"F3"},
+    {x:104.439833,y:30.3203815,floor:"F3"},options)
+  console.log("startNavigationByXY3");
+  console.log(path);
+}
+
+function  _updataCheckPoint(routes,cps) {
+  for (let i = 0; i < cps.length; i++) {
+      for (let j = 0; j < routes.length; j++) {
+          if(routes[j].id == cps[i].nodeID){
+            for (let k = 0; k < routes[j].neighbors.length; k++) {
+                if(routes[j].neighbors[k].id == cps[i].toNodeID){
+                  routes[j].neighbors[k].weight=cps[i].weight;
+                  break;
+                }
+            }
+            break;
+          }
+      }
+  }
+}
+
+function whereIsMapCenter () {
+  //建筑物数据buildingOutlinesc从js文件加载，初始化面对象
+  for (let j = 0; j < buildingOutlines.length; j++) {
+    buildingOutlines[j].polygon=bnmap.turf.polygon(buildingOutlines[j].coordinates);
+  }
+
+  //这个只是把范围绘制出来，方便调试，实际应用中不渲染
+  drawOutLine(buildingOutlines);
+  map.on('moveend',function (evt) {
+    console.log("地图点击坐标" + evt.coordinate.toArray());
+    for (let i = 0; i < buildingOutlines.length; i++) {
+      var pt = bnmap.turf.point(map.getCenter().toArray());
+      //var poly = bnmap.turf.polygon(buildingOutlines[i].coordinates);
+      var isin= bnmap.turf.booleanPointInPolygon(pt, buildingOutlines[i].polygon);
+      if(isin){
+        console.log('中心点在'+buildingOutlines[i].id+"内");
+      }
+
+    }
+
+  });
+}
+function drawOutLine(buildingOutlines) {
+  var polygons=[];
+  for (let i = 0; i < buildingOutlines.length; i++) {
+      var polygon = new bnmap.Polygon(buildingOutlines[i].coordinates, {
+        visible : true,
+        symbol: {
+          'lineColor' : '#34495e',
+          'lineWidth' : 2,
+          'polygonFill' : 'rgb(135,196,240)',
+          'polygonOpacity' : 0.6
+        }
+      });
+    polygons.push(polygon);
+  }
+   new bnmap.VectorLayer('buildingOutline', polygons).addTo(map);
+}
+
+function removeBuilding (id) {
+  map.removeBuilding(id);
+}
+function mapClick () {
+  //这个是地图的点击事件，再没点击到建筑物时是undefined,或者上次的结果
+
+  map.off('click',mapclickFun);
+  map.on('click',mapclickFun);
+  map.buildingInfo=undefined;
+}
+function mapclickFun(evt) {
+  console.log("地图点击坐标" + evt.coordinate.toArray());
+  if(evt.target.buildingInfo){
+    console.log("地图点击建筑物" + evt.target.buildingInfo.building);
+    console.log("地图点击楼层" + evt.target.buildingInfo.floor);
+    console.log("地图点击楼层高度" + evt.target.buildingInfo.altitude);
+  }else {
+    console.log("点击的是室外")
+  }
+  evt.target.buildingInfo=undefined;
+}
+
+function showFloor (buildingId,FloorId) {
+  map.showFloorById(buildingId,FloorId,true);
+}
+/**
+ * 隐藏楼层
+ * @param floor
+ */
+function hideFloor (buildingId,FloorId) {
+  this.map.hideFloorById(buildingId,FloorId);
+}
+/**
+ * 隐藏楼层
+ * @param floor
+ */
+function hideBuild (buildingId) {
+  this.map.hideBuilding(buildingId);
+}
+/**
+ * 隐藏建筑物
+ * @param floor
+ */
+function clearBuild (buildingId) {
+  this.map.removeAllBuilding(buildingId);
+}
+
+function testNavigation() {
+  console.time("navigationInit");
+  /**
+   * 下面的 walkNV和 carNV 只需要初始化一次，
+   * building.routes[0]为数据中的步行导航路网，
+   * building.routes[1] 为驾车导航路网
+   * **/
+  var options={
+    useNodedis:0.001 //当目导航起始点距离路网节点小于该距离时使用路网节点导航1M---0.00001
+  }
+  var walkNV=new bnmap.NaviAnayser(building.routes[0],options);
+  var carNV=new bnmap.NaviAnayser(building.routes[1],options);
+  console.timeEnd("navigationInit")
+  console.time("navigationNnalyser");
+  /**
+   *  下面是用导航分析对象获取导航路径，每次只能获取一条最近路径
+   * **/
+  path=walkNV.analyser({x:104.43914752878061,y:30.315283422492115,floor:"F1"},
+    {x:104.43833918273049,y:30.31397191001483,floor:"F2"})
+
+  var path2=walkNV.analyser({x:104.43914752878061,y:30.315283422492115,floor:"F1"},
+    {x:104.43833918273049,y:30.31397191001483,floor:"F2"})
+  console.timeEnd("navigationNnalyser")
+}
+var toIndex=0;
+/**
+ * 依据全局变量Path来进行导航
+ **/
+function startNavigation() {
+  var gpsPoint={
+    x:path.nodes[toIndex].position[0],
+    y:path.nodes[toIndex].position[1],
+    floor:path.nodes[toIndex].attr.floor,
+    building:path.nodes[toIndex].attr.building,
+  }
+  toIndex++;
+  if(toIndex === path.nodes.length){
+    toIndex =0;
+  }
+  let ops = {
+    passed:{ //走过线的样式
+      line_color: '#00ff00',
+      line_width: 3,
+      line_opacity: 1,
+    },
+    notPassed:{
+      line_color: '#ffff00',
+      line_width: 3,
+      line_opacity: 1,
+    }
+  };
+  ops={};
+
+  const info =map.navigationTo(gpsPoint,path.nodes, ops);
+  console.log(info.tip)
+
+  //隐藏其他楼层
+/*  const allFloors = [];
+  const pointFloor = {};
+  pointFloor.building = gpsPoint.building;
+  pointFloor.floor = gpsPoint.floor;
+  allFloors.push(pointFloor);
+  const nodes = path.nodes;
+  for(let i = 0; i < nodes.length; i++) {
+    const mm = {};
+    mm.building = nodes[i].attr.building;
+    mm.floor = nodes[i].attr.floor;
+    allFloors.push(mm);
+  }
+  const obj = {};
+  const newArr = [];
+  for(let i = 0; i < allFloors.length; i++) {
+    if(!obj[allFloors[i].building] && !obj[allFloors[i].floor]) {
+      newArr.push(allFloors[i]);
+      obj[allFloors[i].building] = true;
+      obj[allFloors[i].floor] = true;
+    }
+  }
+  //console.log(newArr);
+  //console.log(this);
+  for(let i = 0; i < newArr.length; i++) {
+    let b = newArr[i].building;
+    //console.log(this[b]);
+    if(this[b] != undefined) {
+      const bid = this[b].id;
+      for(let j = 0; j<this[b].floors.length; j++) {
+        if(this[b].floors[j].title != newArr[i].floor) {
+          this.hideFloor(bid, this[b].floors[j].id);
+          //console.log(this[b].floors[j].id);
+        }
+      }
+    }
+  }*/
+}
+let a_distance = 5;
+/**
+ * 依据全局变量Path来进行导航
+ * 每次固定步长
+ **/
+function startNavigation_along() {
+  let t_conds=[];
+  for (let i = 0; i <path.nodes.length ; i++) {
+    t_conds.push(path.nodes[i].position)
+  }
+  var line = turf.lineString(t_conds);
+  var options = {units: 'meters'};
+  a_distance +=5;
+  if(a_distance > turf.length(line,options)){
+    a_distance =5;
+  }
+  var along = turf.along(line, a_distance, options);
+
+  var gpsPoint={
+    x:along.geometry.coordinates[0],
+    y:along.geometry.coordinates[1],
+    floor:"F2",
+    building:"T2",
+  }
+
+  let ops = {
+    passed:{ //走过线的样式
+      line_color: '#00ff00',
+      line_width: 3,
+      line_opacity: 1,
+    },
+    notPassed:{
+      line_color: '#ffff00',
+      line_width: 3,
+      line_opacity: 1,
+    }
+  };
+  ops.animateDuration = 1;
+  ops.markerSymbol = {
+    'markerFile': "./mapNavi.png",//图标url
+    'markerWidth':  60,//宽
+    'markerHeight':  60,//高，通过宽高控制大小
+    'markerDx':  0,
+    'markerDy':  0,
+    'markerOpacity': 1,
+    //'markerRotation': 30,//旋转角度,逆时针
+    'markerVerticalAlignment': 'middle',
+  }
+
+  const info =map.navigationTo(gpsPoint,path.nodes, ops);
+  console.log(info.tip)
+
+
+}
+function stopNavigation() {
+  map.stopNavigation()
+}
+
+
+
+
+/**
+ * 打开性能检测
+ **/
+function statsMonitor() {
+    var stats = new Stats();
+    stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.body.appendChild( stats.dom );
+
+    function animate() {
+
+        stats.begin();
+
+        // monitored code goes here
+
+        stats.end();
+        requestAnimationFrame( animate );
+
+    }
+
+    requestAnimationFrame( animate );
+}
+
+function _getAngle2(pt0, pt1) {
+  //let pt2 = {x:pt0.x, y :pt0.y + 1 };
+  const xdis = pt1.x - pt0.x;
+  const ydis = pt1.y - pt0.y;
+
+  return Math.atan2(xdis,ydis ) / Math.PI * 180;
+
+
+}
+
+function getVisbleFloors(id) {
+  var floors=map.getVisblesFloors(id);
+  console.log(floors);
+}
+
+function setOpacity(id) {
+  map.setFloorOpacity("T1",'F3',0.5);
+  var opacity= map.getFloorOpacity("T1",'F3');
+  console.log("opacity:"+opacity);
+}
+var floorMarker,glb,bliw;
+function drawMarkToFloor(coordinate,building,floor,nodeid) {
+  if(!coordinate)
+    coordinate =[104.43914752878061,30.315283422492115,];
+  var maker={
+    coordinates: coordinate,
+    symbol:{
+      'markerFile':  "./mapNavi.png",
+      'markerWidth':  22,
+      'markerHeight':  32,
+      'markerDx':  0,
+      'markerDy':  0,
+      'markerOpacity': 1
+    },
+    properties:{
+      altitude:10,
+      groupid:"customID"
+    }
+  }
+  floorMarker = map.drawPointToFloor(building,floor,maker);
+  floorMarker.setInfoWindow({'title'     : 'Marker\'s InfoWindow',
+    'content'   : ''+nodeid,
+    'dx': 0,
+    'dy': 0,
+    'custom' : false
+  })
+}
+function drawMarkToFloor2(coordinate) {
+  if(!coordinate)
+    coordinate =[104.43928752878061,30.315383422492115,];
+  var maker={
+    coordinates: coordinate,
+    symbol:{
+      'markerFile':  "./images/navigation/location_pin.png",
+      'markerWidth':  22,
+      'markerHeight':  32,
+      'markerDx':  0,
+      'markerDy':  0,
+      'markerOpacity': 1
+    },
+    properties:{
+      altitude:10,
+      groupid:"customID"
+    }
+  }
+  floorMarker2 = map.drawPointToFloor("T1",'F3',maker);
+  floorMarker2.setInfoWindow({'title'     : 'Marker2\'s InfoWindow',
+    'content'   : 'Click on marker to open.\nClick on marker to open.\nClick on marker to open.\nClick on marker to open.\nClick on marker to open.\nClick on marker to open.\n',
+    'dx': 0,
+    'dy': 0,
+    'custom' : false
+  })
+}
+
+function buildClick () {
+  //这个只有点击到建筑物时才会触发
+  map.on('buildclick',function (evt) {
+    console.log("建筑物点击坐标" + evt.coordinate.toArray());
+    console.log("建筑物点击信息" + evt.object3d.userData.BUILD + "-"+evt.object3d.userData.FLOOR );
+    // drawMarkToFloor(evt.coordinate.toArray());
+  });
+}
+
+function removeMarkOnFloor () {
+  floorMarker.remove();
+}
+function clearMarkOnFloor(){
+  var option={
+    groupid:"customID"
+  }
+  map.clearPointOnFloor("T1",'F3',option)
+}
+function clearAllMarkOnFloor(){
+  map.clearPointOnFloor("T1",'F3')
+}
+function clearBuildingsPoint (){
+  map.clearBuildingsPoint();
+}
+function clearBuildingsPointByGroupeid (){
+  var option={
+    groupid:"customID2"
+  }
+  map.clearBuildingsPoint(option);
+}
+
+function geoserverWTMS (){
+  var baselayer=new bnmap.TileLayer('tile', {
+    urlTemplate: 'http://localhost:2162/geoserver/gwc/service/wmts?layer=tf_dcj&style=&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}',
+  });
+  map.setBaseLayer(baselayer);
+}
+
+  function seeSize(){
+    var layers= map.getLayers()
+    var render= layers[0]._getRenderer();
+    var canvas= render.canvas;
+    console.log("canvas:"+canvas.width+","+canvas.height)
+    var mapSize=map.getSize();
+    console.log("mapSize:"+mapSize.width+","+mapSize.height)
+  }
+
+function addTrunMarker(point,text){
+
+  var textMarker = new bnmap.Marker(
+    point,
+    {
+      'properties' : {
+        'name' : text
+      },
+      'symbol' : {
+        'textName' : '{name}',          //value from name in geometry's properties
+        'textWeight'        : 'normal', //'bold', 'bolder'
+        'textStyle'         : 'normal', //'italic', 'oblique'
+        'textSize'          : 30,
+        'textFont'          : null,     //same as CanvasRenderingContext2D.font, override textName, textWeight and textStyle
+        'textFill'          : '#ff030b',
+        'textOpacity'       : 1,
+        'textHaloFill'      : '#2f2e2e',
+        'textHaloRadius'    : 1,
+
+      }
+    }
+  );
+  map.addMarkerToFloor("T2","F2",textMarker)
+}
+function removeTrunMarker (){
+  map.clearBuildingsPoint({groupid:"123"});
+}
+function addTurnline (p1,p2,p3){
+  var coordinates=[p1,p2,p3];
+
+
+  var line = new bnmap.LineString(
+    coordinates,
+    {
+      symbol:{
+        'lineColor' : "#ff000",
+        'lineWidth' : 2,
+        'lineJoin'  : 'round', //miter, round, bevel
+        'lineCap'   : 'round', //butt, round, square
+        'lineDasharray' : null, //dasharray, e.g. [10, 5, 5]
+        'lineOpacity ' : 1
+      },
+      properties : {
+        'altitude' : 5,   //altitude for all vertexes
+        maxZoom:18,
+        minZoom:15,
+      }
+    },
+  )
+  map.addLineToFloor("T2","F2",line);
+}
+
+
+function testTurfAngle(){
+  var p1=[116.60761016786726, 40.054088709976625];
+  var p2=[116.607721, 40.054183];
+  var p3=[116.607836, 40.054281];  //正前方，180，-0.0
+  var p3_yq=[116.60789623147889,  40.05423700600588];  //右前方，206，26
+  var p3_y=[116.6078633007752, 40.05408786982511];  //右，269,89
+  var p3_yh=[116.60774491313646,  40.054041292654546];  //右后，  310.6615204592217  130.66152045909564
+  var p3_zq=[116.60773685097115, 40.054306191355266];  //左前，143,-36
+  var p3_z=[116.60764680649208, 40.05423245294966];  //左，89,269
+  var p3_zh=[116.60757674294268,  40.05416231082867];  //左后，37,217
+
+  var  point1 = turf.point(p1);
+  var  point2 = turf.point(p2);
+  var  point3 = turf.point(p3);
+ /* var  ra=turf.rotateAngle(point1, point2, point3,{mercator:true});
+  var  a=turf.angle(point1, point2, point3,{mercator:true});*/
+  //var  angle= bnmap.turf.angle(point1, point2, point3, {  mercator: true})
+  var  angle2= bnmap.turf.rotateAngle(point3, point2, point1, {  mercator: true})
+  //console.log("角度1:::"+angle);
+  console.log("角度2:::"+angle2);
+
+  addTrunMarker(p1,"1")
+  addTrunMarker(p2,"2")
+  addTrunMarker(p3,"3")
+  addTurnline(p1,p2,p3);
+}
+var distanceTool;
+function distance(){
+  if(distanceTool){
+    if(distanceTool._enabled){
+      distanceTool.clear()
+      distanceTool.disable();
+    }else {
+      distanceTool.enable();
+    }
+
+
+    return;
+  }
+  distanceTool = new bnmap.DistanceTool({
+    'symbol': {
+      'lineColor' : '#34495e',
+      'lineWidth' : 2
+    },
+    'vertexSymbol' : {
+      'markerType'        : 'ellipse',
+      'markerFill'        : '#1bbc9b',
+      'markerLineColor'   : '#000',
+      'markerLineWidth'   : 3,
+      'markerWidth'       : 10,
+      'markerHeight'      : 10
+    },
+
+    'labelOptions' : {
+      'textSymbol': {
+        'textFaceName': 'monospace',
+        'textFill' : '#fff',
+        'textLineSpacing': 1,
+        'textHorizontalAlignment': 'right',
+        'textDx': 15,
+        'markerLineColor': '#b4b3b3',
+        'markerFill' : '#000'
+      },
+      'boxStyle' : {
+        'padding' : [6, 2],
+        'symbol' : {
+          'markerType' : 'square',
+          'markerFill' : '#000',
+          'markerFillOpacity' : 0.9,
+          'markerLineColor' : '#b4b3b3'
+        }
+      }
+    },
+    'clearButtonSymbol' :[{
+      'markerType': 'square',
+      'markerFill': '#000',
+      'markerLineColor': '#b4b3b3',
+      'markerLineWidth': 2,
+      'markerWidth': 15,
+      'markerHeight': 15,
+      'markerDx': 20
+    }, {
+      'markerType': 'x',
+      'markerWidth': 10,
+      'markerHeight': 10,
+      'markerLineColor' : '#fff',
+      'markerDx': 20
+    }],
+    'language' : 'en-US'
+  }).addTo(map);
+}
+
+/**
+ * 加载兴趣点
+ */
+function loadingPoi() {
+  $.ajax({
+    type: "GET",
+    url: "./data/poiData.json",
+    async: true,
+    timeout: 12000,
+    success: function(data) {
+      if(data != null && data != '') {
+        //得到的数据集
+        console.time("addMarkers");
+        addMarkers(data.rows);
+        console.timeEnd("addMarkers");
+      }
+    },
+    error: function(err) {
+
+    }
+  });
+}
+
+/**
+ * 在地图上展示poi点信息
+ * @param data poi点数据
+ */
+function addMarkers(data) {
+  map.clearBuildingsPoint({groupid:"picTextMaker"});
+  let ts = new Date().getTime();
+  for(let i=0,j=0;i<data.length;i++) {
+    if(data[i].terminalId === "T2"){ //data[i].floorId === "F2" &&
+      addPicTextMarker(data[i], clickMarker,null,ts);
+      j++;
+    }
+
+  }
+  map.showElementOnDemand();
+  //用isAddMarker记录每一层的poi是否已经初始化
+ /* var isAddMarker={}
+  isAddMarker["T2F2"]=true;
+
+  //切换楼层时的逻辑
+  if(!isAddMarker["T2F1"]){
+    addMarker(data,"T2","F2");
+  }*/
+}
+
+/**
+ * 地图兴趣点点击事件
+ * @param data
+ */
+function clickMarker(data){
+console.log("marker click");
+}
+/**
+ * 添加图片文字标注层
+ * @param poiData 参数对象
+ * @param callBack 回调函数
+ */
+function addPicTextMarker (poiData,callBack,isShowWindow,ts){
+  let showWindow = true;
+  if(isShowWindow !== null){
+    showWindow = isShowWindow;
+  }
+  // 缩放等级
+  let levelMaxZoom = 22;
+  let levelMinZoom = 0;
+  // 图标宽高
+  let markerSize = 30;
+  // 字体大小
+  let textSize = 12;
+
+
+  if(typeof(poiData.data)!="undefined"){
+    poiData=poiData.data
+  }
+
+  let url ="./mapNavi.png";
+  let symbols = [];
+  if(poiData.showLevel === "6"){
+    levelMinZoom = 15;
+    levelMaxZoom = 22;
+    if(poiData.typeName === "办公"){
+      levelMinZoom = 17;
+    }
+    symbols = [{
+      'textFaceName' : '微软雅黑',
+      'textName' : '{name}',
+      'textFill' : '#4a4a4a',
+      'textHaloFill' : '#fff',
+      'textHaloRadius' : 1,
+      'textSize' : textSize,
+      'textDy'   : 0
+    }];
+  }else{
+    symbols = [{
+      'markerFile'   : url,
+      'markerWidth'  : markerSize,
+      'markerHeight' : markerSize
+    },{
+      'textFaceName' : '微软雅黑',
+      'textName' : '{name}',
+      'textFill' : '#4a4a4a',
+      'textHaloFill' : '#fff',
+      'textHaloRadius' : 1,
+      'textSize' : textSize,
+      'textDy'   : 8
+    }];
+  }
+
+  let marker = new bnmap.Marker(
+    [poiData.longitude,poiData.latitude],
+    {
+      'properties' : {
+        'name' : poiData.poiName,
+        'altitude': poiData.height?poiData.height : -1,
+        'groupid': "picTextMaker",
+        /*'max_zoom':levelMaxZoom,
+        'min_zoom':levelMinZoom,*/
+        'max_zoom':22,
+        'min_zoom':15,
+        'displayOrder' : 0
+      },
+      symbol : symbols
+    }
+  )
+
+ marker.on("click",function (a1,a2,a3){
+   clicktime = new Date().getTime();
+   console.log("mkclikc")
+ })
+  // 存放点信息
+  marker.poi = poiData;
+  let options = {
+    'single' : true,
+    'custom' : false,
+    'dy': 5,
+    'content': "<div class='infoWindowCss'>"+poiData.poiName+"</div>"
+  }
+  let infoWindow = null;
+  if(showWindow){
+    infoWindow = new bnmap.ui.InfoWindow(options);
+  }
+  this.map.addMarkerToFloor(poiData.terminalId,poiData.floorId,marker,options);
+
+
+
+}
+var CanvasLayer = null;
+function showMarkBox(){
+  if(!CanvasLayer){
+    CanvasLayer = new bnmap.BoxLayer('canvasdd');
+    CanvasLayer.addTo(map);
+
+  }
+var vLayer= map.getLayer("buildinglayer-canvas");
+  //var pictures = vLayer.pictures;
+  var pictures = vLayer._geoList;
+  for (let i = 0; i < pictures.length; i++) {
+      var box=vLayer.getRect(pictures[i]);
+      var x=box.minX;
+        var y=box.minY;
+        var width=box.maxX-box.minX;
+        var height=box.maxY-box.minY;
+      var lineColor = pictures[i].options.visible?"#00ff00":"#ff0000"
+    CanvasLayer.addBox({x,y,width,height,lineColor});
+  }
+
+}
+function showMarkCenter(){
+  if(!CanvasLayer){
+    CanvasLayer = new bnmap.BoxLayer('canvasdd');
+    CanvasLayer.addTo(map);
+  }
+var vLayer= map.getLayer("buildinglayer-canvas");
+  var pictures = vLayer.pictures;
+  for (let i = 0; i < pictures.length; i++) {
+    let pt = map.coordinateToContainerPoint(pictures[i]._coordinates).round()
+      var x=pt.x;
+        var y=pt.y;
+
+    CanvasLayer.addPoint({x,y});
+  }
+
+}
+function cleanBox(){
+  CanvasLayer.clean();
+}
+var  moveIntervalId =null
+//快速移动地图
+function moveQuickly(){
+  moveIntervalId = window.setInterval(function (){
+    let center =map.getCenter();
+    let bearing =map.getBearing();
+    //map.setCenter({x:center.x+0.000001,y:center.y+0.000001});
+    const view = {
+      center: {x:center.x+0.000001,y:center.y+0.000001},
+      bearing: bearing+-0.01,
+    };
+    map.setView(view);
+  }, 10);
+}
+function stopMove(){
+  if(moveIntervalId){
+    clearInterval(moveIntervalId);
+  }
+}
+/**
+ * 加载兴趣点
+ */
+function loadingPoi_three() {
+  $.ajax({
+    type: "GET",
+    url: "./data/poiData.json",
+    async: true,
+    timeout: 12000,
+    success: function(data) {
+      if(data != null && data != '') {
+        //得到的数据集
+        addMarkers_three(data.rows);
+      }
+    },
+    error: function(err) {
+
+    }
+  });
+}
+
+/**
+ * 在地图上展示poi点信息
+ * @param data poi点数据
+ */
+function addMarkers_three(data) {
+
+  map.clearBuildingsPoint({groupid:"picTextMaker"});
+  const tmap = new THREE.TextureLoader().load( './loc.png' );
+  let ts = new Date().getTime();
+  for(let i=0,j=0;i<data.length;i++) {
+    if(data[i].floorId === "F2"){
+
+      const material = new THREE.SpriteMaterial( { map: tmap } );
+      const sprite = new THREE.Sprite( material );
+      scene.add( sprite );
+      j++;
+    }
+
+  }
+  map.showElementOnDemand();
+
+}
+function changeSize(){
+  if(  $("#map").height()>500){
+    $("#map").height("50%");
+  }else {
+    $("#map").height("100%");
+  }
+  map.checkSize();
+
+  console.log("changeSize"+ new Date().getTime())
+
+
+}
+</script>
+
+</body>
+</html>
