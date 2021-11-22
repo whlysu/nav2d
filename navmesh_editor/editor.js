@@ -324,6 +324,8 @@ function load_mesh() {
                 });
                 mesh = new nav2d.NavMesh(polygons);
                 console.log(mesh);
+                //console.log(JSON.stringify(mesh.polygons)); //Converting circular structure to
+               //downloadMesh(mesh)
                 set_stats(
                     `Polygons: ${polygons.length} <br>Triangles: ${mesh.polygons.length}`
                 );
@@ -489,7 +491,9 @@ function compute_path() {
         const sy = parseFloat(document.getElementById("sy").value);
         const ex = parseFloat(document.getElementById("ex").value);
         const ey = parseFloat(document.getElementById("ey").value);
+        console.time("findPath")
         let nodes= mesh.findPath([sx, sy], [ex, ey]);
+        console.timeEnd("findPath")
         console.log(nodes);
         update_state({
             path: mesh.findPath([sx, sy], [ex, ey]),
@@ -562,3 +566,36 @@ window.addEventListener("keydown", (event) => {
         document.getElementById("help").classList.toggle("is-active");
     }
 });
+
+
+function downloadMesh(me){
+    var ps=me.polygons;
+    var nps=[];
+    for(let p of ps){
+        let mesh ={id:p._uuid,points:p.points,nb:[]};
+        for(let k in p.neighbors){
+            mesh.nb.push(k);
+        }
+        nps.push(mesh);
+
+    }
+    downloadFile("t2_mesh.json",JSON.stringify(nps));
+}
+
+function downloadFile(filename, text,binary) {
+    var pom = document.createElement('a');
+    if(binary){
+        pom.setAttribute('href', window.URL.createObjectURL(new Blob([text])));
+    }else {
+        pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    }
+
+    pom.setAttribute('download', filename);
+    if (document.createEvent) {
+        var event = document.createEvent('MouseEvents');
+        event.initEvent('click', true, true);
+        pom.dispatchEvent(event);
+    } else {
+        pom.click();
+    }
+}
