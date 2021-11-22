@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>geojson转换成可用路网 </title>
+    <script type="text/javascript" src="./lib/jquery-3.4.1.min.js"></script>
+</head>
+<body>
+<div id="tools">
+  <input type="button"  value="加载Geojson-面" onclick="loadGeojsonPolygon()" /><br>
+  <input type="button"  value="生成自定义格式路网" onclick="generateMyRoute()" /><br>
+    <hr>
+    <hr>
+    <input type="button"  value="下载自定义格式路网" onclick="downloadMyRoute()" /><br>
+</div>
+
+<script>
+    var geopolygons,routedata;
+
+  /**
+   * 加载路网原始数据
+   */
+  function loadGeojsonPolygon () {
+    var that=this;
+    $.ajax({
+      url: "./data/mesh_polygon.json",
+      type: "GET",
+      dataType: "json",
+      success: function(data) {//请求成功完成后要执行的方法
+          geopolygons =data;
+        console.log("原始路网加载完成");
+      }
+    })
+  }
+
+  function generateMyRoute(){
+    var polygons= geopolygons.features;
+      routedata=[];
+
+    for (let i = 0; i < polygons.length; i++) {
+        let py=polygons[i];
+        routedata.push(py.geometry.coordinates[0]);
+    }
+
+  }
+
+    function downloadMyRoute(){
+        let filename= "newroute_"+new Date().valueOf()+".json"
+        downloadFile(filename,JSON.stringify(routedata)); //不压缩
+    }
+
+    function downloadFile(filename, text,binary) {
+        var pom = document.createElement('a');
+        if(binary){
+            pom.setAttribute('href', window.URL.createObjectURL(new Blob([text])));
+        }else {
+            pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        }
+
+        pom.setAttribute('download', filename);
+        if (document.createEvent) {
+            var event = document.createEvent('MouseEvents');
+            event.initEvent('click', true, true);
+            pom.dispatchEvent(event);
+        } else {
+            pom.click();
+        }
+    }
+</script>
+</body>
+</html>
